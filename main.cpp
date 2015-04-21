@@ -163,8 +163,8 @@ uint8_t lastError = 0;
 
 uint8_t valveSequence[11] 	= {0,0,0,0,0,0,0,0,0,0,0};
 uint8_t valveStatus[11] 	= {0,0,0,0,0,0,0,0,0,0,0};
-uint8_t sectorCurrently = 0;
-uint8_t sectorChanged = 0;
+uint8_t sectorCurrently 	= 0;
+uint8_t sectorChanged 		= 0;
 
 uint8_t flag_BrokenPipeVerify = 0;
 uint8_t flag_timeOVF = 0;
@@ -175,7 +175,6 @@ uint8_t flag02 = 0;
 uint8_t flag03 = 0;
 uint8_t flag04 = 0;
 uint8_t flag05 = 0;
-//uint8_t flag_Th = 0;
 uint8_t flag_frameStartBT = 0;
 
 // Communicaton variables
@@ -1551,8 +1550,8 @@ void refreshVariables()
 
 		if(motorStatus)
 		{
-//			pSafe();				// Verify maximum pressure;
-//			pipeBrokenSafe();		// Verify pipe low pressure;
+			pSafe();				// Verify maximum pressure;
+			pipeBrokenSafe();		// Verify pipe low pressure;
 			valveOpenVerify();		// AND op with all output valves;
 		}
 
@@ -1884,18 +1883,17 @@ $0X;				Verificar detalhes - Detalhes simples (tempo).
 	$00;			- Mostra o tempo ajustado de todos setores.
 		$00:0;		- flag_sendContinuously = 0
 		$00:1;		- flag_sendContinuously = 1
-	$01;			- Mostra a relação de quais válvulas estão ligadas ou desligadas;
-	$02;			- Número do telefone que manda o SMS de retorno;
+	$01;			- Mostra o tempo de cada setor;
+	$02;			- Mostra qual setor entra na sequencia de irrigacao;
 	$03;			- Variáveis do motor;
-	$04;			- Verifica a temperatura instantânea do ambiente;
-		$04:04;		- Verifica a temperatura média dos últimos 04 dias.
+	$04;			- Setor atual, mudança de estado, tempo restante no setor;
 	$05;			- Motivo da reinicialização;
-	$06;			- Mostra setor atual, tempo restante e período de operação;
-	$07;			- Liga/Desliga o SIM900;
-	$08;			- Reseta SIM900;
+	$06;			- Ultimo erro, leitura de contatores e rele termico;
+	$07;			- Histórico Liga/Desliga das cargas;
+	$08;			- Corrente no sensor das valvulas;
 	$09;			- Reinicia o sistema.
 
-	$1HHMMSS;		Ajusta o horário do sistema;
+$1HHMMSS;		Ajusta o horário do sistema;
 	$1123040;		Ajustar a hora para 12:30:40
 
 $2DDMMAAAA;  		Ajusta a data do sistema no formato dia/mês/ano(4 dígitos);
@@ -1922,18 +1920,22 @@ $5tNN:MM;		Coloca o tempo em minutos do determinado setor (2 dígitos);
 	$5t02:09;		- ajusta para 09 minutos o tempo do setor 02;
 	$5t11:54;		- ajusta para 54 minutos o tempo do setor 11;
 	$5t09:00;		- zera o setor 9 não deixando ligar à noite;
+	$5t00:05;		- Todos setores com 5 minutos;
+
+$5sNN:MM;		Ativa o setor para sequencia de irrigação;
+	$5s02:1;		- adiciona setor 2 na sequencia;
+	$5s11:0;		- Remove setor 11 da sequencia;
+	$5s00:1;		- adiciona todos setores;
+	$5s00:1;		- remove todos setores;
 
 $6X;		Modo de funcionamento
 	$60; 		- Coloca no modo manual (desligado). DESLIGA TODAS AS CARGAS!;
 	$61;		- Programa para ligar às 21:30 horas do mesmo dia.
 	$62:s01:23;	- Liga a noite somente o setor 1 durante 23 min.
-	$63:06;		- Executa automático 1x por 6 minutos cada setor;
 
 	$69:s03;	- Testa o setor 3 se está funcionando e retorna SMS;
 
 $727988081875;		Troca número de telefone
-
-$8;				Reinicializa o display GLCD do painel;
 */
 
 	// Tx - Transmitter
@@ -1991,7 +1993,6 @@ $8;				Reinicializa o display GLCD do painel;
 
 						default:
 							summary_Print(statusCommand);
-//							flag_sendContinuously = !flag_sendContinuously;
 							break;
 					}
 				}
