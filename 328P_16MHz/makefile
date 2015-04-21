@@ -45,47 +45,47 @@ endif
 
 # Add inputs and outputs from these tool invocations to the build variables 
 LSS += \
-Agro_Vassal2.lss \
+Agro_VassalE.lss \
 
 FLASH_IMAGE += \
-Agro_Vassal2.hex \
+Agro_VassalE.hex \
 
 SIZEDUMMY += \
 sizedummy \
 
 
 # All Target
-all: Agro_Vassal2.elf secondary-outputs
+all: Agro_VassalE.elf secondary-outputs
 
 # Tool invocations
-Agro_Vassal2.elf: $(OBJS) $(USER_OBJS)
+Agro_VassalE.elf: $(OBJS) $(USER_OBJS)
 	@echo 'Building target: $@'
 	@echo 'Invoking: AVR C++ Linker'
-	avr-g++ -Wl,-Map,Agro_Vassal2.map,--cref -mrelax -Wl,--gc-sections -Wl,--gc-sections -L"C:\Users\Thiago\sourceCodes1\arduino_core\328P_16MHz" -mmcu=atmega328p -o "Agro_Vassal2.elf" $(OBJS) $(USER_OBJS) $(LIBS)
+	avr-g++ -Wl,-Map,Agro_VassalE.map,--cref -mrelax -Wl,--gc-sections -Wl,--gc-sections -L"C:\Users\Thiago\sourceCodes1\arduino_core\328P_16MHz" -mmcu=atmega328p -o "Agro_VassalE.elf" $(OBJS) $(USER_OBJS) $(LIBS)
 	@echo 'Finished building target: $@'
 	@echo ' '
 
-Agro_Vassal2.lss: Agro_Vassal2.elf
+Agro_VassalE.lss: Agro_VassalE.elf
 	@echo 'Invoking: AVR Create Extended Listing'
-	-avr-objdump -h -S Agro_Vassal2.elf  >"Agro_Vassal2.lss"
+	-avr-objdump -h -S Agro_VassalE.elf  >"Agro_VassalE.lss"
 	@echo 'Finished building: $@'
 	@echo ' '
 
-Agro_Vassal2.hex: Agro_Vassal2.elf
+Agro_VassalE.hex: Agro_VassalE.elf
 	@echo 'Create Flash image (ihex format)'
-	-avr-objcopy -R .eeprom -R .fuse -R .lock -R .signature -O ihex Agro_Vassal2.elf  "Agro_Vassal2.hex"
+	-avr-objcopy -R .eeprom -R .fuse -R .lock -R .signature -O ihex Agro_VassalE.elf  "Agro_VassalE.hex"
 	@echo 'Finished building: $@'
 	@echo ' '
 
-sizedummy: Agro_Vassal2.elf
+sizedummy: Agro_VassalE.elf
 	@echo 'Invoking: Print Size'
-	-avr-size --format=avr --mcu=atmega328p Agro_Vassal2.elf
+	-avr-size --format=avr --mcu=atmega328p Agro_VassalE.elf
 	@echo 'Finished building: $@'
 	@echo ' '
 
 # Other Targets
 clean:
-	-$(RM) $(C_UPPER_DEPS)$(S_DEPS)$(LSS)$(C_DEPS)$(FLASH_IMAGE)$(CC_DEPS)$(ELFS)$(C++_DEPS)$(OBJS)$(CXX_DEPS)$(ASM_DEPS)$(SIZEDUMMY)$(S_UPPER_DEPS)$(CPP_DEPS) Agro_Vassal2.elf
+	-$(RM) $(C_UPPER_DEPS)$(S_DEPS)$(LSS)$(C_DEPS)$(FLASH_IMAGE)$(CC_DEPS)$(ELFS)$(C++_DEPS)$(OBJS)$(CXX_DEPS)$(ASM_DEPS)$(SIZEDUMMY)$(S_UPPER_DEPS)$(CPP_DEPS) Agro_VassalE.elf
 	-@echo ' '
 
 secondary-outputs: $(LSS) $(FLASH_IMAGE) $(SIZEDUMMY)
