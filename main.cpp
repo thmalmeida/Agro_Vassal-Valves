@@ -110,21 +110,17 @@ tmElements_t tm;
 #define MinOn 	30
 #define HourOff	6
 #define MinOff	0
-//const uint8_t HourOn  = 21;
-//const uint8_t MinOn   = 30;
-//const uint8_t HourOff = 6;
-//const uint8_t MinOff  = 0;
 
 // PRessure
+#define sectorMax 	11
 #define minPRess	49
 #define Imin 		80
 #define Iconst		1.30
 
 // Global
-const uint8_t sectorMax = 11;
 const uint8_t timePipeB = 185;					// Time to turn down while valve does not open
-volatile uint8_t flag_timePipeB = 0;
 volatile uint8_t count_timePipeB = timePipeB;
+volatile uint8_t flag_BrokenPipeVerify = 0;
 
 // Logs
 const int nLog = 12;
@@ -166,7 +162,6 @@ uint8_t valveStatus[11] 	= {0,0,0,0,0,0,0,0,0,0,0};
 uint8_t sectorCurrently 	= 0;
 uint8_t sectorChanged 		= 0;
 
-uint8_t flag_BrokenPipeVerify = 0;
 uint8_t flag_timeOVF = 0;
 uint8_t flag_timeMatch = 0;
 
@@ -884,7 +879,6 @@ void valveInstr(uint8_t sectorPrivate, uint8_t status, uint8_t makeLog)
 	// These flags comes here because when you change sector the pressure go down.
 	// With this, you disable the pressure turn system down verify.
 	flag_BrokenPipeVerify = 0;
-	flag_timePipeB = 0;
 	count_timePipeB = timePipeB;
 
 	switch (sectorPrivate)
@@ -1146,7 +1140,7 @@ void summary_Print(uint8_t opt)
 			break;
 
 		case 4:
-			sprintf(buffer,"s%d c%d El:%d", sectorCurrently, sectorChanged, timeSector);
+			sprintf(buffer,"s%d c%d El:%d Ep:%d", sectorCurrently, sectorChanged, timeSector, count_timePipeB);
 			Serial.println(buffer);
 			//			sprintf(buffer,"Setor Atual: %d, Tempo restante: %d", stateSector, timeSector);
 			break;
@@ -1367,22 +1361,14 @@ void thermalSafe()
 }
 void pipeBrokenSafe()
 {
-	if(motorStatus)
+	if(PRess<minPRess)
 	{
-		if(flag_BrokenPipeVerify)
-		{
-			if(PRess<minPRess)
-			{
-				turnAll_OFF();
-				summary_Print(24);
-//				Serial.println("PRessure Down!");
-				lastError = 0x04;
-				eeprom_write_byte((uint8_t *)(addr_lastError), lastError);
-//				enableSIM900_Send = 1;
-			}
-		}
+		turnAll_OFF();
+		lastError = 0x04;
+		eeprom_write_byte((uint8_t *)(addr_lastError), lastError);
+		summary_Print(24);
+//		Serial.println("PRessure Down!");
 	}
-
 }
 void pSafe()
 {
@@ -1531,17 +1517,6 @@ void refreshVariables()
 	if(motorStatus || k1_readPinD)
 		thermalSafe();
 
-	if(flag_timePipeB)
-	{
-		flag_timePipeB = 0;
-		count_timePipeB = timePipeB;
-
-		if(motorStatus)
-		{
-			flag_BrokenPipeVerify = 1;
-		}
-	}
-
 	if (flag_1s)
 	{
 		flag_1s = 0;
@@ -1550,22 +1525,16 @@ void refreshVariables()
 
 		if(motorStatus)
 		{
-			pSafe();				// Verify maximum pressure;
-			pipeBrokenSafe();		// Verify pipe low pressure;
 			valveOpenVerify();		// AND op with all output valves;
+			pSafe();				// Verify maximum pressure;
+
+			if(flag_BrokenPipeVerify)
+				pipeBrokenSafe();		// Verify pipe low pressure;
 		}
 
 		RTC.read(tm);				// RTC fetch;
 		periodVerify0();			// Period time refresh;
 	}
-
-//	if(flag_5min)
-//	{
-//		flag_5min = 0;
-//		count_5min = 300;
-//
-//		tempNow = getAirTemperature();
-//	}
 }
 void refreshTimeSectors()
 {
@@ -2410,25 +2379,8 @@ $727988081875;		Troca número de telefone
 
 ISR(TIMER1_COMPA_vect)
 {
-//	if(flag_SIM900_checkAlive)
-//	{
-//		count_SIM900_timeout++;
-//	}
-//	else
-//	{
-//		if(count_30s > 30)
-//		{
-//			count_30s = 0;
-//			count_SIM900_timeout = 0;
-//
-//			flag_30s = 1;
-//		}
-//		else
-//			count_30s++;
-//	}
-
 	if(!count_timePipeB)
-		flag_timePipeB = 1;
+		flag_BrokenPipeVerify = 1;
 	else
 		count_timePipeB--;
 
@@ -2440,7 +2392,7 @@ ISR(TIMER1_COMPA_vect)
 			timeSector--;
 	}
 
-	flag_1s =1;
+	flag_1s = 1;
 }
 
 // Test functions
@@ -2533,3 +2485,38 @@ int main()
 //		comm_SerialPC_BluetoothMOD();
 //	}
 }
+
+//ISR(TIMER1_COMPA_vect)
+//{
+//	if(flag_SIM900_checkAlive)
+//	{
+//		count_SIM900_timeout++;
+//	}
+//	else
+//	{
+//		if(count_30s > 30)
+//		{
+//			count_30s = 0;
+//			count_SIM900_timeout = 0;
+//
+//			flag_30s = 1;
+//		}
+//		else
+//			count_30s++;
+//	}
+//
+//	if(!count_timePipeB)
+//		flag_BrokenPipeVerify = 1;
+//	else
+//		count_timePipeB--;
+//
+//	if(stateMode)
+//	{
+//		if(timeSector == 0)
+//			flag_timeOVF = 1;
+//		else
+//			timeSector--;
+//	}
+//
+//	flag_1s = 1;
+//}
