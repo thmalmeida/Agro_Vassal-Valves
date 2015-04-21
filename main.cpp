@@ -65,13 +65,6 @@ Errors:
 
 tmElements_t tm;
 
-#define k3_on()		PORTD |=  (1<<5);	// Triac 3 is enabled
-#define k3_off()	PORTD &= ~(1<<5);	// Triac 3 is disabled
-#define k2_on()		PORTD |=  (1<<6);	// Triac 2 is enabled
-#define k2_off()	PORTD &= ~(1<<6);	// Triac 2 is disabled
-#define k1_on()		PORTD |=  (1<<7);	// Triac 1 is enabled
-#define k1_off()	PORTD &= ~(1<<7);	// Triac 1 is disabled
-
 #define s11_on()	PORTB |=  (1<<4);	// S11
 #define s11_off()	PORTB &= ~(1<<4);	// S11
 #define	s10_on()	PORTB |=  (1<<3);	// S10
@@ -96,10 +89,21 @@ tmElements_t tm;
 #define s01_on()	PORTB |=  (1<<0);	// S01
 #define s01_off()	PORTB &= ~(1<<0);	// S01
 
+#define k3_on()		PORTD |=  (1<<5);	// Triac 3 is enabled
+#define k3_off()	PORTD &= ~(1<<5);	// Triac 3 is disabled
+#define k2_on()		PORTD |=  (1<<6);	// Triac 2 is enabled
+#define k2_off()	PORTD &= ~(1<<6);	// Triac 2 is disabled
+#define k1_on()		PORTD |=  (1<<7);	// Triac 1 is enabled
+#define k1_off()	PORTD &= ~(1<<7);	// Triac 1 is disabled
+
 // Contactors input
 #define k1_readPin	bit_is_clear(PIND, 4)
 #define k3_readPin 	bit_is_clear(PINC, 2)
 #define Th_readPin	bit_is_clear(PINC, 3)
+
+#define k3_readPinD	bit_is_set(PIND, 5)
+#define k2_readPinD	bit_is_set(PIND, 6)
+#define k1_readPinD	bit_is_set(PIND, 7)
 
 // Time decision variables
 #define HourOn	21
@@ -157,8 +161,8 @@ uint8_t timeSectorVectorMin[11];
 uint8_t flag_1s = 0;
 uint8_t lastError = 0;
 
-uint8_t valveSequence[11] = {0,0,0,0,0,0,0,0,0,0,0};
-uint8_t valveStatus[11] = {0,0,0,0,0,0,0,0,0,0,0};
+uint8_t valveSequence[11] 	= {0,0,0,0,0,0,0,0,0,0,0};
+uint8_t valveStatus[11] 	= {0,0,0,0,0,0,0,0,0,0,0};
 uint8_t sectorCurrently = 0;
 uint8_t sectorChanged = 0;
 
@@ -171,7 +175,7 @@ uint8_t flag02 = 0;
 uint8_t flag03 = 0;
 uint8_t flag04 = 0;
 uint8_t flag05 = 0;
-uint8_t flag_Th = 0;
+//uint8_t flag_Th = 0;
 uint8_t flag_frameStartBT = 0;
 
 // Communicaton variables
@@ -809,19 +813,35 @@ void logMessage(uint8_t loadType, uint8_t newStatus)
 {
 	int i;
 
-	for(i=(nLog-1);i>0;i--)
+//	for(i=(nLog-1);i>0;i--)
+	for(i=1; i<nLog; i++)
 	{
-		hourLog[i] = hourLog[i-1];
-		minuteLog[i] = minuteLog[i-1];
+		hourLog[i-1] = hourLog[i];
+		minuteLog[i-1] = minuteLog[i];
 
-		loadLog[i] = loadLog[i-1];
-		loadStatus[i] = loadStatus[i-1];
+		loadLog[i-1] = loadLog[i];
+		loadStatus[i-1] = loadStatus[i];
 	}
-	loadLog[0] = loadType;
-	loadStatus[0] = newStatus;
+	loadLog[nLog-1] = loadType;
+	loadStatus[nLog-1] = newStatus;
 
-	hourLog[0] = tm.Hour;
-	minuteLog[0] = tm.Minute;
+	hourLog[nLog-1] = tm.Hour;
+	minuteLog[nLog-1] = tm.Minute;
+
+
+//	for(i=(nLog-1);i>0;i--)
+//	{
+//		hourLog[i] = hourLog[i-1];
+//		minuteLog[i] = minuteLog[i-1];
+//
+//		loadLog[i] = loadLog[i-1];
+//		loadStatus[i] = loadStatus[i-1];
+//	}
+//	loadLog[0] = loadType;
+//	loadStatus[0] = newStatus;
+//
+//	hourLog[0] = tm.Hour;
+//	minuteLog[0] = tm.Minute;
 }
 
 void motor_start()
@@ -1065,7 +1085,6 @@ void turnAll_OFF()
 void summary_Print(uint8_t opt)
 {
 	char buffer[50];
-	char buffer2[8];
 	int i;
 
 	switch (opt)
@@ -1093,8 +1112,8 @@ void summary_Print(uint8_t opt)
 		case 1:
 			for(i=0;i<11;i++)
 			{
-				sprintf(buffer2,"t%d:%d, ",i+1, timeSectorVectorMin[i]);
-				Serial.print(buffer2);
+				sprintf(buffer,"t%d:%d, ",i+1, timeSectorVectorMin[i]);
+				Serial.print(buffer);
 			}
 			Serial.println("");
 //			sprintf(buffer,"t1:%d, t2:%d, t3:%d", timeSectorVectorMin[0], timeSectorVectorMin[1], timeSectorVectorMin[2]);
@@ -1110,8 +1129,8 @@ void summary_Print(uint8_t opt)
 		case 2:
 			for(i=0;i<11;i++)
 			{
-				sprintf(buffer2,"s%d:%d, ",i+1, valveSequence[i]);
-				Serial.print(buffer2);
+				sprintf(buffer,"s%d:%d, ",i+1, valveSequence[i]);
+				Serial.print(buffer);
 			}
 			Serial.println("");
 
@@ -1123,7 +1142,7 @@ void summary_Print(uint8_t opt)
 			break;
 
 		case 3:
-			sprintf(buffer,"M:%d Pr:%d fTh:%d Rth:%d", motorStatus, PRess, flag_Th, Th_readPin);
+			sprintf(buffer,"M:%d Pr:%d Rth:%d", motorStatus, PRess, Th_readPin);
 			Serial.println(buffer);
 			break;
 
@@ -1139,15 +1158,15 @@ void summary_Print(uint8_t opt)
 			break;
 
 		case 6:
-			sprintf(buffer,"LE%d K%d Th%d K%d", lastError, k1_readPin, Th_readPin, k3_readPin);
+			sprintf(buffer,"LE%d K%d Th%d K%d k1d%d", lastError, k1_readPin, Th_readPin, k3_readPin, k1_readPinD);
 			Serial.println(buffer);
 			break;
 
 		case 7:
-			for(i=0; i<nLog; i++)
+			for(i=(nLog-1); i>=0; i--)
 			{
-				sprintf(buffer2,"%.2d:d%d:L%.2d-%.2d:%.2d;",i, loadStatus[i], loadLog[i], hourLog[i], minuteLog[i]);
-				Serial.print(buffer2);
+				sprintf(buffer,"%.2d-L%.2d|%d|%.2d:%.2d ",i+1, loadLog[i], loadStatus[i], hourLog[i], minuteLog[i]);
+				Serial.print(buffer);
 				Serial.println("");
 			}
 			break;
@@ -1328,38 +1347,22 @@ void valveOpenVerify()
 }
 void thermalSafe()
 {
-	if(motorStatus)
+	if(Th_readPin)
 	{
-		if(Th_readPin)
+		uint16_t countThermal = 50000;
+//		Serial.println("A");
+		while(Th_readPin && countThermal)
 		{
-			summary_Print(3);
-			uint16_t countThermal = 50000;
-//			Serial.println("Thermal Start");
-			while(Th_readPin && countThermal)
-			{
-				countThermal--;
-			}
-//			Serial.println("Thermal Stop");
-			if(!countThermal)
-			{
-				flag_Th = 1;
-				turnAll_OFF();
-				summary_Print(22);
-//				Serial.println("Thermal Safe executed!");
-				lastError = 0x02;
-				eeprom_write_byte((uint8_t *)(addr_lastError), lastError);
-//				enableSIM900_Send = 1;
-
-//				strcpy(buffer,"Rele Sobrecarga!");
-//				SIM900_sendSMS(buffer);
-//				eeprom_write_byte(( uint8_t *)(addr_stateMode), stateMode);
-			}
-			else
-				flag_Th = 0;
+			countThermal--;
 		}
-		else
+//		Serial.println("B");
+		if(Th_readPin && !countThermal)
 		{
-			flag_Th = 0;
+			turnAll_OFF();
+//			Serial.println("Thermal Safe!");
+			lastError = 0x02;
+			eeprom_write_byte((uint8_t *)(addr_lastError), lastError);
+			summary_Print(22);
 		}
 	}
 }
@@ -1435,6 +1438,7 @@ void process_Working()
 
 		if(sectorNext >= sectorMax)
 		{
+			valveInstr(sectorCurrently, 0, 1);
 			turnAll_OFF();
 			Serial.println("Done!");
 			lastError = 0x10;
@@ -1444,72 +1448,6 @@ void process_Working()
 	}
 }
 
-//void process_Working()
-//{
-//	uint16_t timeAux = 0;
-//
-//	// 1- Check valve working before start motor
-//	if(!motorStatus)
-//	{
-//		do{
-//			stateSector = verifyNextValve(stateSector);
-//			timeAux = timeSectorMemory(stateSector);
-//
-//			if(stateSector==0) // In the case verifyNextVale() returns 0 with all broken valves;
-//				timeAux = 1;
-//		}while(timeAux==0);
-//
-//		if(stateSector>0)
-//		{
-//			valveInstr(stateSector,1);
-//			motor_start();
-//
-////			_delay_ms(200);
-////			GLCD.Init();
-//
-//			flag_sector = 0;
-//			flag_timeOVF = 0;
-//		}
-//		else
-//		{
-////			Serial.println("Out of order!");
-//			stateMode = 0; //manual;
-//		}
-//	}
-//
-//	// 2- Verifica se pode trocar de setor
-//	if(!flag_sector)
-//	{
-//		flag_sector = 1;
-//
-//		uint8_t i=0;
-//		for(i=1;i<stateSector;i++)		// Desliga todos setores anteriores.
-//		{
-//			valveInstr(i,0);
-//		}
-//		valveInstr(stateSector,1);
-//
-//		if(stateMode == 2) // Automatic
-//			timeSector = timeSectorSet;
-//		else
-//			timeSector = timeSectorMemory(stateSector);
-//
-//		summary_Print(4);
-////		sprintf(buffer,"Time: %.2d:%.2d:%.2d, %.2d/%.2d/%d \n Sector[%.2d]: ON!",tm.Hour, tm.Minute, tm.Second, tm.Day, tm.Month, tmYearToCalendar(tm.Year), stateSector);
-////		Serial.println(buffer);
-////		SIM900_sendSMS(buffer);
-//	}
-//
-//	// Encerra o processo;
-//	if(flag_timeOVF)
-//	{
-//		flag_sector = 0;
-//		flag_timeOVF = 0;
-//		timeSector = 10;		// Para nao gerar interrupcao e voltar aqui de novo pulando setor
-//
-//		stateSector = verifyNextValve(stateSector+1);
-//	}
-//}
 void process_Programmed()
 {
 	if(((tm.Hour == HourOn) && (tm.Minute == MinOn)))
@@ -1589,17 +1527,9 @@ void periodVerify0()
 
 void refreshVariables()
 {
-//	wdt_reset();
-//	temperature = getAirTemperature();
-//	Serial.println(temperature);
-//	Soil Humidity Sensor
-//	sprintf(buffer,"Hum. Solo: %.4d",soilSensorRead());
-//	GLCD.CursorTo(0,7);
-//	GLCD.print(buffer);
-
 	motorStatus = k1_readPin;
 
-	if(motorStatus)
+	if(motorStatus || k1_readPinD)
 		thermalSafe();
 
 	if(flag_timePipeB)
@@ -1612,12 +1542,6 @@ void refreshVariables()
 			flag_BrokenPipeVerify = 1;
 		}
 	}
-
-//	if(flag_30s)
-//	{
-//		flag_30s = 0;
-//		SIM900_checkAlive();
-//	}
 
 	if (flag_1s)
 	{
@@ -2144,8 +2068,7 @@ $8;				Reinicializa o display GLCD do painel;
 				else
 					motor_stop();
 
-				summary_Print(1);
-
+				summary_Print(3);
 				break;
 
 // -----------------------------------------------------------------
